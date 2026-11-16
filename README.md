@@ -28,6 +28,7 @@ skills/
 | Skill | Description |
 |-------|-------------|
 | [kickoff](skills/kickoff/SKILL.md) | Interview the user, then write a strict `CLAUDE.md` working agreement (no AI credit), `AGENTS.md`, and a monorepo structure for a new project. |
+| [orchestrator](skills/orchestrator/SKILL.md) | Run a project as a non-coding orchestrator: Sonnet builders, Haiku visual QA, Opus gap auditor, own verification, capped fix loops, task list + optional Brief tracking, per-project facts and handoff in `docs/orchestrator.md`. |
 | [example-skill](skills/example-skill/SKILL.md) | Minimal example showing skill structure. Delete once real skills exist. |
 
 ## Install
