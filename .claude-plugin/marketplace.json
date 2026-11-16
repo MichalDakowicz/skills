@@ -8,6 +8,11 @@
       "name": "skills",
       "source": "./",
       "description": "Collection of useful Claude Code skills."
+    },
+    {
+      "name": "orchestrator-pane",
+      "source": "./mods/orchestrator-pane",
+      "description": "Side pane showing the orchestrator skill's goal, done-bars, task-list progress and next step, live from docs/orchestrator/."
     }
   ]
 }

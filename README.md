@@ -15,11 +15,21 @@ skills/
 │       ├── references/    # optional: docs loaded on demand
 │       ├── scripts/       # optional: helper scripts the skill runs
 │       └── assets/        # optional: templates, files used in output
+├── mods/                  # one folder per mod (each its own plugin)
+│   └── <mod-name>/
+│       ├── .claude-plugin/plugin.json
+│       ├── hooks/hooks.json   # names the one hooks module
+│       ├── hooks/register.tsx # the mod: register(on) adds hooks
+│       ├── types/index.d.ts   # optional: $.state contract
+│       └── tests/*.test.tsx   # optional: run by `claude plugin test`
 ├── .github/workflows/     # CI: runs validate.py on push/PR
-├── template/SKILL.md      # starting point for new skills
+├── template/
+│   ├── SKILL.md           # starting point for new skills
+│   └── mod/               # starting point for new mods
 └── scripts/
     ├── new-skill.py       # scaffold a new skill from the template
-    ├── validate.py        # check every SKILL.md has valid frontmatter
+    ├── new-mod.py         # scaffold a new mod and list it in marketplace.json
+    ├── validate.py        # check skills' frontmatter and mods' manifests
     └── install.py         # copy/link skills into ~/.claude/skills
 ```
 
@@ -27,8 +37,16 @@ skills/
 
 | Skill | Description |
 |-------|-------------|
-| [kickoff](skills/kickoff/SKILL.md) | Interview the user, then write a strict `CLAUDE.md` working agreement (no AI credit), `AGENTS.md`, and a monorepo structure for a new project. |
+| [kickoff](skills/kickoff/SKILL.md) | Set up a new project with few questions: reuses your global defaults (`~/.claude/kickoff/defaults.json`, updated each run), asks only the gaps, then writes a strict `CLAUDE.md` working agreement (no AI credit), `AGENTS.md`, and a monorepo structure. |
 | [orchestrator](skills/orchestrator/SKILL.md) | Run a project as a non-coding orchestrator: Sonnet builders, Haiku visual QA, Opus gap auditor, own verification, agreed goal with checkable done-bars it must fully meet, round limit that asks the user, task list + optional Brief tracking, project facts, goal and handoff in `docs/orchestrator/`. |
+
+## Mods
+
+Mods change Claude Code itself (panes, bands, themes, slash commands, tool-call hooks) through a hooks module. Each one is its own plugin in this marketplace.
+
+| Mod | Description |
+|-----|-------------|
+| [orchestrator-pane](mods/orchestrator-pane/hooks/register.tsx) | Side pane with the [orchestrator](skills/orchestrator/SKILL.md) goal, done-bars per area, task-list progress per section and the handoff's next step, read live from `docs/orchestrator/`. Opens by itself when that folder exists; `/orchestrator-pane` opens it anywhere; it also opens when the orchestrator skill starts. |
 
 ## Install
 
@@ -37,7 +55,11 @@ skills/
 ```
 /plugin marketplace add MichalDakowicz/skills
 /plugin install skills@michu-skills
+/plugin install orchestrator-pane@michu-skills   # mod
 ```
+
+From a shell: `claude plugin install orchestrator-pane --marketplace MichalDakowicz/skills`.
+In the desktop app: + next to the prompt box → Plugins → Add marketplace `MichalDakowicz/skills` → Add plugin.
 
 **Manual (copy into personal skills dir):**
 
@@ -64,6 +86,28 @@ python scripts/validate.py
 - Folder name = `name` in frontmatter, kebab-case.
 - `description` says **what** the skill does and **when** to trigger it — Claude picks skills from this line alone.
 - Keep `SKILL.md` focused; push long material into `references/` and point to it.
+
+## Add a mod
+
+```bash
+python scripts/new-mod.py my-mod "What it does"
+```
+
+Then edit `mods/my-mod/hooks/register.tsx`, add a row to the Mods table, and check it:
+
+```bash
+claude plugin validate mods/my-mod
+```
+
+```bash
+claude plugin test mods/my-mod
+```
+
+```bash
+python scripts/validate.py
+```
+
+While developing, run a session with `claude --plugin-dir mods/my-mod`; saving the module hot-reloads it.
 
 ## License
 
