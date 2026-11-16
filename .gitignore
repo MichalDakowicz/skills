@@ -5,3 +5,4 @@ __pycache__/
 Thumbs.db
 *.original.md
 .claude/settings.local.json
+mods/*/.claude-plugin/types/
