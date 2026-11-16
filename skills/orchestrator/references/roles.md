@@ -65,6 +65,9 @@ Changed flows to walk END TO END as a real user (do not just read code):
 
 Design to compare against: {{design files}}
 
+Goal bars this run must meet (report any that fail, even if they look minor):
+{{the Works / Looks / Feels bars that touch these flows}}
+
 Return a numbered bug list. For each bug:
   N. [severity: blocker/major/minor/nit] title
      Did: …
@@ -77,7 +80,7 @@ End with: flows that passed, and anything you could not test and why.
 ### Default modes (for drafting)
 
 Use these only to suggest a Testing section when `CLAUDE.md` has none (see
-[project-file.md](project-file.md#testing-section-in-claudemd)). After the user approves
+[project-docs.md](project-docs.md#testing-section-in-claudemd)). After the user approves
 the section, the section is what counts.
 
 | Type | Suggested way to verify |
@@ -127,5 +130,5 @@ If you find nothing real, say so. Do not pad the list.
 - Blocker and major findings get fixed in this unit.
 - Minor ones get fixed if cheap; otherwise they become task-list items.
 - Out-of-scope findings become task-list items.
-- A builder question that needs the user goes to the open questions in the project file
+- A builder question that needs the user goes to the open questions in `docs/orchestrator/project.md`
   and to the user.
