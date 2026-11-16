@@ -3,18 +3,42 @@
 Usage:
   python scripts/install.py [skill ...] [--link] [--force]
 
-  --link   symlink instead of copy (needs Developer Mode or admin on Windows)
+  --link   symlink instead of copy (on Windows without symlink rights: a junction)
   --force  replace existing skill folders with the same name
 """
 from __future__ import annotations
 
+import os
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
 from _common import skill_dirs
 
 DEST = Path.home() / ".claude" / "skills"
+
+
+def is_junction(path: Path) -> bool:
+    check = getattr(path, "is_junction", None)  # Python 3.12+
+    return bool(check and check())
+
+
+def make_link(src: Path, dst: Path) -> str:
+    """Symlink src at dst; on Windows without symlink rights, use a junction."""
+    try:
+        dst.symlink_to(src, target_is_directory=True)
+        return "symlink"
+    except OSError:
+        if os.name != "nt":
+            raise
+    # Junctions need no admin or Developer Mode and edits still apply live.
+    subprocess.run(
+        ["cmd", "/c", "mklink", "/J", str(dst), str(src.resolve())],
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
+    return "junction"
 
 
 def main() -> int:
@@ -32,19 +56,22 @@ def main() -> int:
     DEST.mkdir(parents=True, exist_ok=True)
     for name in wanted:
         src, dst = available[name], DEST / name
-        if dst.exists() or dst.is_symlink():
+        if dst.exists() or dst.is_symlink() or is_junction(dst):
             if not force:
                 print(f"skip {name}: exists (use --force)")
                 continue
-            if dst.is_symlink() or dst.is_file():
+            if is_junction(dst):
+                os.rmdir(dst)  # removes the junction only, never the target
+            elif dst.is_symlink() or dst.is_file():
                 dst.unlink()
             else:
                 shutil.rmtree(dst)
         if link:
-            dst.symlink_to(src, target_is_directory=True)
+            how = make_link(src, dst)
+            print(f"linked ({how}) {name} -> {dst}")
         else:
             shutil.copytree(src, dst)
-        print(f"{'linked' if link else 'copied'} {name} -> {dst}")
+            print(f"copied {name} -> {dst}")
     return 0
 
 
