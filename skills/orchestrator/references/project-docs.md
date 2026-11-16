@@ -1,12 +1,26 @@
-# Project file: `docs/orchestrator.md`
+# Project docs: `docs/orchestrator/`
 
-Each project keeps its own orchestration facts here, so the skill itself stays generic.
-`CLAUDE.md` holds the standing rules. This file holds how to run, check and ship the
-project, plus the live handoff.
+Each project keeps its orchestration files in one folder, so the skill itself stays
+generic and a new session can resume from the files alone.
 
-Commit it. Keep secrets, passwords, tokens and `.env` values out of it. Hosts and
-deploy commands are fine in a private repo. In a public repo, point to an env var or a
-gitignored local file instead (for example `docs/orchestrator.local.md`).
+```
+docs/orchestrator/
+├── project.md    facts: how to ship, track and run agents here
+├── goal.md       the agreed goal for the current run (see goal.md reference)
+├── handoff.md    where the last session stopped
+├── goals/        achieved goals, one file each
+└── local.md      private facts for public repos (gitignored)
+```
+
+`CLAUDE.md` holds the standing rules, including how to test. The folder holds facts
+and state. Commit everything except `local.md`. Keep secrets, passwords, tokens and
+`.env` values out of all of it. Hosts and deploy commands are fine in a private repo.
+In a public repo, put them in `local.md` and add `docs/orchestrator/local.md` to
+`.gitignore`.
+
+**Migrating:** if the project has an old single `docs/orchestrator.md`, split it into
+`project.md` and `handoff.md`, delete the old file, and commit with
+`docs: move orchestrator docs into folder`.
 
 ## First-run setup
 
@@ -26,9 +40,9 @@ anything the survey already settled.
 6. **Regression pass** at session start: always, only when stale, or never?
 
 How to check, run and test the project is not asked here. It lives in `CLAUDE.md`
-(next section).
+(next section). The goal is not asked here either: it is drafted right after setup.
 
-Show the filled file once and get an OK before writing it.
+Show the filled `project.md` once and get an OK before writing it.
 
 ## Testing section in `CLAUDE.md`
 
@@ -43,7 +57,8 @@ them. Only if nothing covers **checks** and **how to verify a change**, draft th
 missing parts with the user. Pre-fill from the manifests' scripts and from the tester
 modes in [roles.md](roles.md#default-modes-for-drafting). Show the draft and append it
 to `CLAUDE.md` only after their OK. Never rewrite a testing section the user already
-wrote; suggest additions instead.
+wrote; suggest additions instead. (The `kickoff` skill writes this section for new
+projects.)
 
 What the section should answer:
 
@@ -70,13 +85,13 @@ states, console and logs, offline…}}
 **Report:** what was verified and what was not, in {{PR / docs/implementation.md}}.
 ```
 
-## Template
+## `project.md`
 
 ```markdown
-# Orchestration
+# Orchestration: project
 
-How agents run, check and ship this project. Rules live in CLAUDE.md; this file is
-facts and state. Updated by the orchestrator at the end of every session.
+How agents ship and track this project. Rules and testing live in CLAUDE.md; the goal
+lives in goal.md; the last session's state lives in handoff.md.
 
 ## Project
 
@@ -85,18 +100,14 @@ facts and state. Updated by the orchestrator at the end of every session.
 - Design source: {{paths}}. {{which platform leads}}
 - Task list: `{{docs/TASKS.md}}`
 - Brief: {{project id and name | none}}
-
-## Testing
-
-Checks, running and verification: see the Testing section of `CLAUDE.md`.
-Regression pass at session start: {{always | when stale | never}}
+- Regression pass at session start: {{always | when stale | never}}
 
 ## Shipping
 
 - Autonomy: {{commit | push | deploy}}
 - Branch: `{{feat/…}}`, base `{{main}}`, PR: {{#n | not opened}}
-- Deploy: `{{command or "see orchestrator.local.md"}}`
-- Smoke-test URL: {{…}}
+- Deploy: `{{command | "see local.md"}}`
+- Smoke-test URL: {{… | "see local.md"}}
 - Always ask first: migrations, infra, production data, {{project-specific}}
 
 ## Models
@@ -106,27 +117,24 @@ builder `{{sonnet}}` · tester `{{haiku}}` · gap auditor `{{opus}}`
 ## Open questions
 
 <!-- Waiting on the user. Never resolve these yourself. -->
-- {{question}} (blocks: {{unit}})
-
-## Handoff
-
-{{see format below}}
+- {{question}} (blocks: {{unit or goal bar}})
 ```
 
-## Handoff
+## `handoff.md`
 
-Rewrite this section (do not append) at the end of every session and commit it with
+Rewrite the whole file (do not append) at the end of every session and commit it with
 `docs: update orchestrator handoff`.
 
 ```markdown
-## Handoff
+# Orchestration: handoff
 
 _Updated {{YYYY-MM-DD}}_
 
 **State.** Branch `{{…}}` at `{{short sha}}`, pushed: {{yes/no}}. Checks: {{all green |
 which fail}}. Deployed: {{sha / no}}.
 
-**Parked.** {{units left after the round limit: unit, stage, remaining findings}}
+**Goal.** {{goal statement, one line}}: {{x/y}} bars met, status {{active | blocked |
+achieved}}. Open bars: {{list}}.
 
 **Done this session.** {{units, one line each, with how they were verified}}
 
@@ -134,12 +142,14 @@ which fail}}. Deployed: {{sha / no}}.
 
 **In flight.** {{unit, stage of the pipeline, open findings}}
 
+**Parked.** {{units left after the round limit: unit, stage, remaining findings}}
+
 **Claimed but unfinished.** {{tracker entry ids still claimed; verify, then finish}}
 
-**Next.** {{the next unit(s) in order}}
+**Next.** {{the next unit(s) toward the goal}}
 
 **Housekeeping.** {{PR not opened, migrations not registered, etc.}}
 ```
 
-The handoff replaces the long hand-written "state of the project" prompt. A new session
-only needs "be the orchestrator" plus this file.
+The folder replaces the long hand-written "state of the project" prompt. A new session
+only needs "be the orchestrator".

@@ -6,7 +6,7 @@ orchestrated on a machine without Brief.
 
 ## Markdown task list
 
-The file is named in `docs/orchestrator.md` (usually `docs/TASKS.md` or
+The file is named in `docs/orchestrator/project.md` (usually `docs/TASKS.md` or
 `docs/implementation.md`). Expected shape (adapt to whatever the project already uses;
 do not reformat an existing file):
 
@@ -26,7 +26,7 @@ do not reformat an existing file):
 ## Brief adapter
 
 Use it only when **both** hold:
-1. `docs/orchestrator.md` names a Brief project id, and
+1. `docs/orchestrator/project.md` names a Brief project id, and
 2. the `brief_*` tools exist in the session (check with ToolSearch "brief").
 
 If either is missing, say so once and continue with the markdown list only.
