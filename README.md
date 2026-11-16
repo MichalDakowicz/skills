@@ -64,3 +64,7 @@ python scripts/validate.py
 - Folder name = `name` in frontmatter, kebab-case.
 - `description` says **what** the skill does and **when** to trigger it — Claude picks skills from this line alone.
 - Keep `SKILL.md` focused; push long material into `references/` and point to it.
+
+## License
+
+[MIT](LICENSE)

@@ -2,6 +2,7 @@
   "name": "skills",
   "version": "0.1.0",
   "description": "Collection of useful Claude Code skills.",
+  "license": "MIT",
   "author": {
     "name": "Michu"
   }
