@@ -1,9 +1,15 @@
-# Kickoff interview
+# Kickoff interview (full)
+
+This is the **full** interview, run only when the user asks for it ("full
+interview", "ask me everything") or picks it at the final OK. The normal run asks
+only the gaps (SKILL.md step 2) and defaults the rest from
+[defaults.md](defaults.md). It is also the catalogue of options: the
+"(Recommended)" choices here are the recommended defaults.
 
 Ask in rounds with `AskUserQuestion` (≤4 questions per call, 2–4 options each; the
 user can always type "Other"). Put the recommended option first with "(Recommended)".
-Skip anything already answered. Later rounds depend on earlier answers — only ask
-what applies.
+Pre-select saved defaults instead, marked "(Saved)". Skip anything already answered.
+Later rounds depend on earlier answers — only ask what applies.
 
 ## Round 1 — product and platforms
 
