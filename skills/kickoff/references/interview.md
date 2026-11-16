@@ -83,17 +83,53 @@ Only if a rewrite or a reference clone was found.
 - **Default order of work** (multi-app): shared foundation → mobile → web → desktop
   (Recommended), or user order.
 
-## Round 7 — verification and release
+## Round 7 — how to test (methods)
 
-- **Device testing** (mobile only): Android phone over adb, built APK only
-  (Recommended) / iOS simulator / emulator / none.
-- **Checks before PR:** lint + typecheck + tests (Recommended) / plus e2e / minimal.
+The answers become the `## Testing` section of `CLAUDE.md`. Every agent reads it,
+including the orchestrator skill, which hands it word for word to its testers. Ask one
+question per chosen platform (multiSelect: a project can use several methods). With more
+than 4 platforms, split them over two calls. Method details and the text each one adds
+to the agreement are in [testing-methods.md](testing-methods.md).
+
+| Platform | Options (first = recommended) |
+|----------|-------------------------------|
+| Web | Built-in browser pane (Claude desktop app) · Claude in Chrome (your real Chrome, your sign-ins) · Playwright e2e tests · Manual by you |
+| Mobile | Android phone over adb, built APK · Android emulator over adb · iOS simulator (macOS only) · Manual by you |
+| Desktop | Computer use on the built app · Playwright for Electron · Built-in browser on the renderer dev URL · Manual by you |
+| Backend / API | Real HTTP calls against local stack · Integration tests against a local backend (e.g. `supabase start`) · Calls against a staging URL · Manual by you |
+| CLI | Run in a scratch dir with real and bad input · Snapshot / golden-output tests · Manual by you |
+| Browser extension | Claude in Chrome with the unpacked extension · Playwright with the extension loaded · Manual by you |
+
+Phrase each one like: "How should agents verify web changes?" If the user picks only
+"Manual by you", warn once that agents then cannot prove that their own work runs,
+and record it.
+
+## Round 8 — how to test (coverage and environment)
+
+1. **Coverage** (multiSelect, UI platforms only): light + dark themes (Recommended) /
+   narrow + wide viewports / keyboard + focus states / empty, loading and error states
+   / console, network and logs / offline behaviour. Pre-select what the design shows.
+2. **Dev server:** runs in your own terminal tab and agents never kill it, only start it
+   if it is down (Recommended) / agents start and stop their own. Ask the command and
+   port if not obvious from the stack.
+3. **Sign-in during tests:** test accounts from project seed files, local dev only
+   (Recommended) / no sign-in needed / you sign in yourself when asked. Agents never
+   type your real passwords. A password, lock or 2FA prompt means stop and ask.
+4. **Check each session** (multiSelect, optional): phone connected / dev server up /
+   lock screen or sign-in state / VPN or tunnel on / none.
+
+## Round 9 — checks and release
+
+- **Checks before commit/PR:** lint + typecheck + tests (Recommended) / plus build /
+  plus e2e / minimal.
+- **Never during tests** (multiSelect, optional): real payments / production data /
+  sending real email or notifications / other apps on the device.
 - **Deploy:** auto-deploy after verification with a command (ask it, e.g.
   `npm run deploy:web`) / deploy only when asked / not set up yet.
 - **Evidence:** record verification in `docs/implementation.md` (Recommended) /
   PR description only.
 
-## Round 8 — conventions
+## Round 10 — conventions
 
 - **File size caps:** soft ~200 / hard ~300 lines (Recommended) / other / none.
 - **Structure:** thin screens, logic in hooks + pure helpers (Recommended) / other.
@@ -104,5 +140,5 @@ Only if a rewrite or a reference clone was found.
 ## Final confirmation
 
 Show a compact summary (platform → stack, backend, design source, git, autonomy,
-testing, deploy, scaffold-now). Ask: "Write CLAUDE.md and scaffold with this?"
+testing methods per platform, coverage, checks, deploy, scaffold-now). Ask: "Write CLAUDE.md and scaffold with this?"
 Write nothing before this OK.
