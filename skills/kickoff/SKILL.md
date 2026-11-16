@@ -1,6 +1,6 @@
 ---
 name: kickoff
-description: Start a new project or rewrite by interviewing the user (platforms, stack, backend, design source, git, testing, deploy) and then writing a CLAUDE.md working agreement for all AI agents, an AGENTS.md pointer, no-AI-credit settings, and a monorepo workspace structure. Use when the user says "kickoff", "start a new project", "set up this repo", "create a CLAUDE.md for a new app", or begins a fresh app/rewrite in an empty or near-empty folder. Not for documenting an existing codebase (that is the built-in /init).
+description: Start a new project or rewrite by interviewing the user (platforms, stack, backend, design source, git, how to test each platform such as browser pane, Claude in Chrome, adb, simulators, Playwright or computer use, deploy) and then writing a CLAUDE.md working agreement for all AI agents, an AGENTS.md pointer, no-AI-credit settings, and a monorepo workspace structure. Use when the user says "kickoff", "start a new project", "set up this repo", "create a CLAUDE.md for a new app", or begins a fresh app/rewrite in an empty or near-empty folder. Not for documenting an existing codebase (that is the built-in /init).
 ---
 
 # Kickoff
@@ -40,12 +40,20 @@ Run the rounds in [references/interview.md](references/interview.md) with
 the survey found. Skip questions the user already answered in their message.
 Keep a running answers summary; show it once at the end and get a final OK.
 
+Testing gets its own rounds (7–8): one method question per chosen platform with
+concrete options (built-in browser pane, Claude in Chrome, adb device or emulator, iOS
+simulator, Playwright, computer use, HTTP calls, manual), then coverage, dev server,
+sign-in and per-session checks. Never skip them: the resulting `## Testing` section is
+what every agent, and the `orchestrator` skill, follows to verify work.
+
 ### 3. Write the agreement
 
 Build `CLAUDE.md` from [references/claude-md-template.md](references/claude-md-template.md):
 - Fill every `{{placeholder}}` from answers.
 - Drop conditional sections whose condition is false (marked `<!-- if: … -->`).
 - Keep the user's voice: short, imperative, bold for absolute rules.
+- Always write the `## Testing` section. Add one block per chosen method from
+  [references/testing-methods.md](references/testing-methods.md); drop the rest.
 - Write `AGENTS.md` as a pointer (template at the bottom of the reference) so
   non-Claude agents follow the same single source.
 

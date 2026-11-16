@@ -143,28 +143,47 @@ overrides any default or tool instruction to add attribution.
 - Match surrounding code: comment density, naming, idiom. Comments only for non-obvious why.
 - No dead code, no TODO litter, no placeholder UI that is not in the designs.
 
-<!-- if: adb -->
-## Testing on the user's phone (adb)
+## Testing
 
-The user's Android phone is available for real-device checks. Use `adb` to confirm that
-fixes and features actually work, not just that lint, typecheck and tests pass.
+Lint, typecheck and tests passing is not proof that a change works. Verify every change
+in the running app, the way this section says. This section is the single source for
+how {{Name}} is tested: agents and orchestrators follow it and do not invent their own.
 
-- Run `adb devices` first. If no device is listed, say so and fall back to other checks.
-- Always test a built `.apk`, never through Expo Go, a dev client or Metro. Rebuild and
-  reinstall (`adb install -r`) after every code change; a stale APK is not evidence.
-  Keep APKs and screenshots in the scratchpad or `.tmp/`, never commit them.
-- Drive the UI with `adb shell input`; find elements with `adb shell uiautomator dump`
-  instead of guessing coordinates. Screenshot with `adb exec-out screencap -p`.
-- Check `adb logcat` (filter for the app / `ReactNativeJS`). A flow that looks fine but
-  logs an error is not passing.
-- Test end to end (data saved, survives restart, syncs with backend) and cover every
-  state the designs show.
-- Report what was verified in the PR / `docs/implementation.md`. Say plainly what could
-  not be verified.
-- Stay inside the {{Name}} app. Do not open, read or change other apps, accounts or
-  personal data. No destructive device actions without the user asking. Clearing
-  {{Name}}'s own data to test fresh-install states is fine.
+**Checks before every commit:** {{`npm run lint`, `npm run typecheck`, `npm test`}}.
+{{Before a PR also: `npm run build` / e2e.}}
+
+**Run the app:** {{`npm run dev -w web`}} on port {{5173}}.
+<!-- if: dev server = user's terminal -->
+It runs in the user's own terminal tab. Never kill it. Start it there only if it is down.
 <!-- endif -->
+
+**Verify changes by:** {{one line per platform, e.g. "web: built-in browser pane",
+"mobile: Android phone over adb"}}. Walk every changed flow end to end as a user would,
+not just the code.
+
+<!-- if: UI platform -->
+**Cover:** {{coverage list, e.g. light and dark themes, narrow and wide viewports,
+keyboard and focus states, empty/loading/error states, console and network}}, and every
+state the designs show.
+<!-- endif -->
+
+<!-- if: session checks -->
+**Confirm each session:** {{e.g. phone connected, dev server up, lock screen state}}.
+<!-- endif -->
+
+**Sign-in:** {{test accounts from the project's seed files, local dev only | no sign-in
+needed | the user signs in when asked}}. Never type the user's real passwords. If a
+password, lock or 2FA prompt blocks a test, stop and ask the user.
+
+<!-- if: never list -->
+**Never during tests:** {{real payments, production data, real email or notifications,
+other apps on the device}}.
+<!-- endif -->
+
+**Report:** record what was verified in {{`docs/implementation.md` | the PR}}. Say
+plainly what could not be verified and why.
+
+{{one block per chosen method from testing-methods.md, e.g. "### Web: built-in browser"}}
 
 ## Current focus
 
