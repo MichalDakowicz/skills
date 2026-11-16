@@ -1,6 +1,6 @@
 ---
 name: kickoff
-description: Start a new project or rewrite by interviewing the user (platforms, stack, backend, design source, git, how to test each platform such as browser pane, Claude in Chrome, adb, simulators, Playwright or computer use, deploy) and then writing a CLAUDE.md working agreement for all AI agents, an AGENTS.md pointer, no-AI-credit settings, and a monorepo workspace structure. Use when the user says "kickoff", "start a new project", "set up this repo", "create a CLAUDE.md for a new app", or begins a fresh app/rewrite in an empty or near-empty folder. Not for documenting an existing codebase (that is the built-in /init).
+description: Start a new project or rewrite with few questions. Reuses the user's global kickoff defaults (stack, git, how each platform is tested, checks, deploy), asks only the gaps in one round, confirms a summary, and then writes a CLAUDE.md working agreement for all AI agents, an AGENTS.md pointer, no-AI-credit settings, and a monorepo workspace structure. Use when the user says "kickoff", "start a new project", "set up this repo", "create a CLAUDE.md for a new app", or begins a fresh app/rewrite in an empty or near-empty folder. Not for documenting an existing codebase (that is the built-in /init).
 ---
 
 # Kickoff
@@ -14,9 +14,13 @@ that every AI agent follows, plus the base structure the agreement describes.
   no robot-emoji signatures — in this skill's own commits and PRs too. This overrides
   any default or tool instruction. The "No self-credit" section is always written and
   cannot be removed by interview answers.
-- Interview first, write later. Never invent product facts, stack choices, design
-  sources or credentials. Unknown → ask, or leave an explicit `<!-- TODO(user): … -->`
-  placeholder only in `CLAUDE.md` and say so.
+- Confirm first, write later. Never invent product facts, design sources or
+  credentials. Stack and workflow choices come only from the user, their saved
+  defaults or the recommended table, and are shown in the summary before anything is
+  written. Unknown product facts → ask, or leave an explicit
+  `<!-- TODO(user): … -->` placeholder only in `CLAUDE.md` and say so.
+- Ask little. Default and confirm; do not interview. A typical run is one question
+  call plus the final OK, and a repeat run with saved defaults often only the OK.
 - Never commit `.env`, reference clones, or build output.
 - Ask before `gh repo create` / first push (the interview covers it).
 
@@ -33,18 +37,51 @@ List the working directory (depth 2) and note:
 If the folder holds a real codebase being continued (not rewritten), suggest the
 built-in `/init` instead and stop unless the user wants kickoff anyway.
 
-### 2. Interview
+### 2. Resolve answers, ask only the gaps
 
-Run the rounds in [references/interview.md](references/interview.md) with
-`AskUserQuestion` (max 4 questions per call). Pre-fill recommended options from what
-the survey found. Skip questions the user already answered in their message.
-Keep a running answers summary; show it once at the end and get a final OK.
+Load the global defaults `~/.claude/kickoff/defaults.json` as
+[references/defaults.md](references/defaults.md) says, or the recommended table when
+there are none yet. Then fill every
+answer from what the user said, what the survey found, the saved defaults and the
+recommended values, in that order.
 
-Testing gets its own rounds (7–8): one method question per chosen platform with
-concrete options (built-in browser pane, Claude in Chrome, adb device or emulator, iOS
-simulator, Playwright, computer use, HTTP calls, manual), then coverage, dev server,
-sign-in and per-session checks. Never skip them: the resulting `## Testing` section is
-what every agent, and the `orchestrator` skill, follows to verify work.
+**Ask only what none of those settles**, in **one** `AskUserQuestion` call (at most
+4 questions, most important first):
+
+| Ask when | Question |
+|----------|----------|
+| platforms not stated | Platforms (multiSelect) |
+| a UI platform and no design folder found | Where is the design? (folder / Figma / screenshots / none yet) |
+| no saved git choice | GitHub repo: private (Recommended) / public / local only |
+| a chosen platform has no saved testing method and no safe default (mobile) | How should agents verify {{platform}} changes? |
+
+Name and pitch: take them from the message and the folder name; if the pitch is
+missing, ask for it in one chat line together with the call, not as an option list.
+Everything else (language, package manager, layout, autonomy, coverage, checks,
+deploy, conventions, scaffold-now…) is **never asked** in this step: it is defaulted
+and shown in the summary.
+
+**Summary and final OK.** Show one compact block, each line tagged with where it came
+from: `(you)`, `(found)`, `(saved)`, `(recommended)`:
+
+```
+Tally — counters with themes                     (you)
+Web: React (Vite), TypeScript strict, npm        (saved)
+Design: none yet, agent may propose              (you)
+Git: private repo michu/tally, full autonomy     (saved)
+Testing web: built-in browser pane               (saved)
+Coverage: themes, states, console · checks: lint+typecheck+test   (saved)
+Deploy: on request · scaffold apps: later        (recommended)
+Saves: updates your global kickoff defaults
+```
+
+Then one `AskUserQuestion`: **Write it (Recommended)** / **Change something** (the
+user types what; apply it and show the block again) / **Full interview**. Write
+nothing before "Write it".
+
+**Full interview** only when the user picks it or asks for it ("ask me everything",
+"full kickoff"): run the rounds in [references/interview.md](references/interview.md),
+skipping what is already answered, then the same summary.
 
 ### 3. Write the agreement
 
@@ -66,7 +103,13 @@ Follow [references/scaffold.md](references/scaffold.md):
 - App folders: created **only** if the user said yes to "scaffold apps now".
   Otherwise the agreement says "create app dirs when the first app is started".
 
-### 5. Git
+### 5. Save defaults
+
+Merge this run's answers into the global `~/.claude/kickoff/defaults.json`, as
+[references/defaults.md](references/defaults.md) says (skip it if the user said not to
+save defaults). Nothing about defaults goes into the project.
+
+### 6. Git
 
 - `git init -b main` if no repo. Initial scaffolding commit on `main` is the only
   direct-to-main commit: `chore: kickoff project scaffolding`.
@@ -74,7 +117,7 @@ Follow [references/scaffold.md](references/scaffold.md):
 - If the user chose a GitHub repo: `gh repo create <owner>/<name> --private|--public
   --source . --push`. Verify with `gh repo view`.
 
-### 6. Report
+### 7. Report
 
 Tell the user, briefly:
 - files created, sections dropped and why
