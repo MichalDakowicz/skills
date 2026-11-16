@@ -1,0 +1,13 @@
+{
+  "name": "michu-skills",
+  "owner": {
+    "name": "Michu"
+  },
+  "plugins": [
+    {
+      "name": "skills",
+      "source": "./",
+      "description": "Collection of useful Claude Code skills."
+    }
+  ]
+}
