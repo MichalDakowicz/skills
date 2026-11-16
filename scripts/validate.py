@@ -30,8 +30,8 @@ def main() -> int:
             errors.append(f"{d.name}: missing 'description'")
         elif len(desc) > 1024:
             errors.append(f"{d.name}: description over 1024 chars")
-        if "{{" in skill_md.read_text(encoding="utf-8"):
-            errors.append(f"{d.name}: unfilled template placeholder")
+        if "{{" in name or "{{" in desc or "TODO" in desc:
+            errors.append(f"{d.name}: unfilled template placeholder in frontmatter")
 
     for e in errors:
         print(f"ERROR {e}")

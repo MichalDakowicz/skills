@@ -27,6 +27,7 @@ skills/
 
 | Skill | Description |
 |-------|-------------|
+| [kickoff](skills/kickoff/SKILL.md) | Interview the user, then write a strict `CLAUDE.md` working agreement (no AI credit), `AGENTS.md`, and a monorepo structure for a new project. |
 | [example-skill](skills/example-skill/SKILL.md) | Minimal example showing skill structure. Delete once real skills exist. |
 
 ## Install
