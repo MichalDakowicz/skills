@@ -1,6 +1,6 @@
 {
   "name": "orchestrator-pane",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Band above the prompt showing the orchestrator skill's goal, done-bars, task-list progress and next step, live from docs/orchestrator/.",
   "license": "MIT",
   "author": {
