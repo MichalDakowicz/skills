@@ -9,10 +9,12 @@ export type Goal = {
 export type Section = { name: string; done: number; total: number }
 export type Tasks = { path: string; sections: Section[] }
 
-/** What the pane draws: one read of docs/orchestrator/ and the task list. */
+/** What the band draws: one read of docs/orchestrator/ and the task list. */
 export type Board = {
-  /** Whether docs/orchestrator/ exists in the working directory. */
+  /** Whether docs/orchestrator/ was found (see `root`). */
   isFound: boolean
+  /** The project folder read from when found, else where the search started. */
+  root?: string
   goal?: Goal
   tasks?: Tasks
   next?: string
@@ -20,8 +22,25 @@ export type Board = {
   readAt: number
 }
 
+/** A project folder chosen with `/orchestrator-pane <folder>`; none means search. */
+export type Pin = { path?: string }
+
+/** The band above the prompt: what the person chose and what started it. */
+export type Band = {
+  /** Hidden with `/orchestrator-pane hide`. */
+  isHidden: boolean
+  /** Showing each done-bar and task section, not just the summary. */
+  isExpanded: boolean
+  /** The orchestrator or the command ran: show it before docs exist. */
+  isStarted: boolean
+}
+
 declare module 'claude-code' {
   interface PluginState {
-    'orchestrator-pane': { board: Shaped<Board> }
+    'orchestrator-pane': {
+      board: Shaped<Board>
+      pin: Shaped<Pin>
+      band: Shaped<Band>
+    }
   }
 }

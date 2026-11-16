@@ -46,7 +46,7 @@ Mods change Claude Code itself (panes, bands, themes, slash commands, tool-call 
 
 | Mod | Description |
 |-----|-------------|
-| [orchestrator-pane](mods/orchestrator-pane/hooks/register.tsx) | Side pane with the [orchestrator](skills/orchestrator/SKILL.md) goal, done-bars per area, task-list progress per section and the handoff's next step, read live from `docs/orchestrator/`. Opens by itself when that folder exists; `/orchestrator-pane` opens it anywhere; it also opens when the orchestrator skill starts. |
+| [orchestrator-pane](mods/orchestrator-pane/hooks/register.tsx) | Band above the prompt with the [orchestrator](skills/orchestrator/SKILL.md) goal's done-bars, task-list progress and the handoff's next step, read live from `docs/orchestrator/` (More lists each bar and section). Shows by itself when that folder is in the session's folder, a folder above it, or a worktree's main checkout, and when the orchestrator skill starts. `/orchestrator-pane <folder>` points it at another project, `auto` searches again, `hide` hides it. |
 
 ## Install
 
