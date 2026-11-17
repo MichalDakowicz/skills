@@ -31,7 +31,8 @@ is done.
   Never type a password on the user's behalf.
 - **Git per the agreement.** Plain `git` / `gh` with the user's own identity (never
   `-c user.name/email`). Small conventional commits on the feature branch. Never
-  force-push the default branch. Open PRs; never merge them.
+  force-push the default branch. Open PRs; merge one only after the user says yes to
+  your question (see [Finishing the goal](#finishing-the-goal)).
 - **Do not kill the user's processes.** The dev server runs in the user's own terminal
   tab. Read it; start it there only if it is not running.
 - **Loops are capped.** After 3 fix rounds in a stage of a unit, stop and ask the user
@@ -154,7 +155,8 @@ Each project sets one level in `project.md` on the first run.
 | `deploy` | commit + push + run the project's deploy command, then smoke-test the deployed URL |
 
 At every level: open a PR when the branch's checks pass and the user has not opened
-one. Never merge. Database migrations, infra changes and anything touching production
+one. Never merge on your own: when the PR is ready, ask the user whether you should
+merge it, and merge only on a yes. Database migrations, infra changes and anything touching production
 data always need the user's go-ahead, whatever the level.
 
 ## Finishing the goal
@@ -165,6 +167,10 @@ re-check of the whole scope, not of the last unit. Misses become units. When the
 is clean, report each bar with its evidence, archive the goal to `goals/`, and offer to
 draft the next one. If bars cannot be met this run, mark the goal `blocked`, say which
 bars and why, and ask. Never call a blocked goal done.
+
+If a PR is open and green, end by asking the user whether you should merge it (name the
+PR and base branch). Do not tell them to merge it themselves. Merge only on a clear yes,
+then update the handoff.
 
 ## Session end
 
