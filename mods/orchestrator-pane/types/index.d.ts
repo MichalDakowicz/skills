@@ -22,6 +22,14 @@ export type Board = {
 
 declare module 'claude-code' {
   interface PluginState {
-    'orchestrator-pane': { board: Shaped<Board> }
+    'orchestrator-pane': {
+      board: Shaped<Board>
+      /** Whether the pane lists done bars under their areas. */
+      showDone: boolean
+      /** Whether the band shows the open bars and tasks under its line. */
+      isExpanded: boolean
+      /** Whether the orchestrator skill started this session. */
+      isStarted: boolean
+    }
   }
 }
