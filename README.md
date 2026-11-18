@@ -37,6 +37,7 @@ skills/
 
 | Skill | Description |
 |-------|-------------|
+| [deslop-ui](skills/deslop-ui/SKILL.md) | Build or fix UIs so they look designed, not AI-generated, without stripping their character. Fix mode keeps what gives a UI its identity, fixes only what is broken and lifts 1–2 brand elements; build mode plans a focal point, prior art and 2 signature moves, dosed by an intensity table (confident, not loud). Rules for lists that replace cards, FAQ, anchored popover menus and row-action placement, 4px spacing, bold type hierarchy, motion and mobile; bans known AI tells (purple gradients, card overuse, emoji icons, pulsing dots, glows, eyebrows). Checks with `scripts/scan.py` and before/after screenshots. |
 | [kickoff](skills/kickoff/SKILL.md) | Set up a new project with few questions: reuses your global defaults (`~/.claude/kickoff/defaults.json`, updated each run), asks only the gaps, then writes a strict `CLAUDE.md` working agreement (no AI credit), `AGENTS.md`, and a monorepo structure. |
 | [orchestrator](skills/orchestrator/SKILL.md) | Run a project as a non-coding orchestrator: Sonnet builders, Haiku visual QA, Opus gap auditor, own verification, agreed goal with checkable done-bars it must fully meet, round limit that asks the user, task list + optional Brief tracking, project facts, goal and handoff in `docs/orchestrator/`. |
 
