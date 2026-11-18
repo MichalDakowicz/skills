@@ -46,7 +46,7 @@ Mods change Claude Code itself (panes, bands, themes, slash commands, tool-call 
 
 | Mod | Description |
 |-----|-------------|
-| [orchestrator-pane](mods/orchestrator-pane/hooks/register.tsx) | The [orchestrator](skills/orchestrator/SKILL.md) goal, done-bars per area, task-list progress per section and the handoff's next step, read live from `docs/orchestrator/`. A two-line band above the prompt shows the progress at a glance (a done-bar bar, each area coloured by how far along it is, the task total) over the next step, whenever that folder exists or the orchestrator skill starts. `/orchestrator-pane` (or the band's `▾`) opens the open bars and task sections under it and closes them again; it prints nothing and runs at once, even mid-turn. Desktop and mobile draw the band as styled SVG. |
+| [orchestrator-pane](mods/orchestrator-pane/hooks/register.tsx) | A two-line band above the prompt with the [orchestrator](skills/orchestrator/SKILL.md) progress at a glance (a done-bar bar, each area coloured by how far along it is, the task total) over the handoff's next step, read live from `docs/orchestrator/`. It finds that folder in the session's folder, one above it, or a git worktree's main checkout, and shows whenever it is found or the orchestrator skill starts. `/orchestrator-pane` (or the band's `▾`) opens the open bars and task sections under it and closes them again; `/orchestrator-pane <folder>` reads another project, `auto` searches again, `hide` hides the band. The command prints nothing in the chat (it answers with a toast) and runs at once, even mid-turn. Desktop and mobile draw the band as styled SVG. |
 
 ## Install
 

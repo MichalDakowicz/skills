@@ -71,7 +71,11 @@ export const parseTasks = (text: string): Section[] => {
 export const parseHandoff = (
   text: string,
 ): { next?: string; updatedOn?: string } => ({
-  next: text.match(/\*\*Next\.\*\*\s*(.+)/)?.[1]?.trim(),
+  // The line after `**Next.**`, or its first bullet when a list follows.
+  next: text
+    .match(/\*\*Next\.\*\*\s*(.+)/)?.[1]
+    ?.replace(/^[-*]\s+/, '')
+    .trim(),
   updatedOn: text.match(/_Updated\s+([^_]+?)\s*_/)?.[1]?.trim(),
 })
 
@@ -79,4 +83,47 @@ export const countBars = (goal: Goal): { done: number; total: number } => {
   const bars = goal.areas.flatMap(area => area.bars)
 
   return { done: bars.filter(bar => bar.isDone).length, total: bars.length }
+}
+
+// Paths below are spelled with `/`; the engine's fs takes them on Windows too.
+const slashed = (path: string): string => path.replace(/\\/g, '/')
+
+const isAbsolute = (path: string): boolean => /^([A-Za-z]:)?\//.test(slashed(path))
+
+/** Resolves `path` against `base` (absolute), folding `.` and `..`. */
+export const resolvePath = (base: string, path: string): string => {
+  const whole = isAbsolute(path) ? slashed(path) : `${slashed(base)}/${slashed(path)}`
+  const drive = whole.match(/^[A-Za-z]:/)?.[0] ?? ''
+  const parts: string[] = []
+  for (const part of whole.slice(drive.length).split('/')) {
+    if (part === '' || part === '.') continue
+    if (part === '..') parts.pop()
+    else parts.push(part)
+  }
+
+  return `${drive}/${parts.join('/')}`
+}
+
+/** The folder above `dir`, or undefined at a root (`/`, `C:/`). */
+export const parentOf = (dir: string): string | undefined => {
+  const trimmed = slashed(dir).replace(/\/+$/, '')
+  const cut = trimmed.lastIndexOf('/')
+  if (cut < 0) return undefined
+  const up = trimmed.slice(0, cut)
+
+  return up === '' ? '/' : /^[A-Za-z]:$/.test(up) ? `${up}/` : up
+}
+
+/** Joins a folder and a relative path. */
+export const joinPath = (dir: string, path: string): string =>
+  `${slashed(dir).replace(/\/+$/, '')}/${slashed(path)}`
+
+/**
+ * The main checkout a git worktree's `.git` file points at
+ * (`gitdir: C:/repo/.git/worktrees/name` gives `C:/repo`), or undefined.
+ */
+export const parseWorktreeMain = (gitFile: string): string | undefined => {
+  const main = gitFile.match(/^gitdir:\s*(.+?)[\\/]\.git[\\/]worktrees[\\/]/m)?.[1]
+
+  return main === undefined ? undefined : slashed(main.trim())
 }

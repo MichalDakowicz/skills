@@ -12,7 +12,7 @@
     {
       "name": "orchestrator-pane",
       "source": "./mods/orchestrator-pane",
-      "description": "Orchestrator progress and next step in a two-line band above the prompt, with open bars and tasks one command away, live from docs/orchestrator/."
+      "description": "Orchestrator progress and next step in a two-line band above the prompt, with open bars and tasks one command away; finds docs/orchestrator/ above the session folder or in a worktree's main checkout."
     }
   ]
 }

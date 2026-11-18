@@ -91,7 +91,7 @@ const nextLine = (view: Board, width: number, y: number): string => {
   const room = width - 18
 
   if (!view.isFound) {
-    return txt(16, y, cut('Orchestrator starting · fills in as docs/orchestrator/ is written', 12.5, room), 'm', 12.5)
+    return txt(16, y, cut(`Orchestrator · waiting for docs/orchestrator/ in ${view.root ?? 'this folder'}`, 12.5, room), 'm', 12.5)
   }
   if (goal && isGoalMet(goal, bars.done, bars.total)) {
     return (

@@ -1,19 +1,23 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { Board } from '../types'
+import type { Band, Board, Pin } from '../types'
 import {
   countBars,
+  joinPath,
+  parentOf,
   parseGoal,
   parseHandoff,
   parseTaskPath,
   parseTasks,
+  parseWorktreeMain,
+  resolvePath,
 } from './parse'
 import { detailSvg, glanceSvg, isGoalMet } from './svg'
 
 const COMMAND = 'orchestrator-pane'
 const DIR = 'docs/orchestrator'
-// Tools whose call may change the docs the views read.
+// Tools whose call may change the docs the band reads.
 const WRITERS = new Set([
   'Write',
   'Edit',
@@ -28,25 +32,24 @@ const WRITERS = new Set([
 const board = atom(
   { plugin: 'orchestrator-pane', key: 'board' } as const,
   { isFound: false, readAt: 0 },
-  { shape: 'board-1' },
+  { shape: 'board-2' },
 )
 
-// Whether the done bars are listed under their areas or folded into a count.
+const pin = atom(
+  { plugin: 'orchestrator-pane', key: 'pin' } as const,
+  {} as Pin,
+  { shape: 'pin-1' },
+)
+
+const band = atom(
+  { plugin: 'orchestrator-pane', key: 'band' } as const,
+  { isHidden: false, isExpanded: false, isStarted: false } as Band,
+  { shape: 'band-1' },
+)
+
+// Whether the opened band lists done bars beside the open ones.
 const showDone = atom(
   { plugin: 'orchestrator-pane', key: 'showDone' } as const,
-  false,
-)
-
-// Whether the band shows the detail (open bars, tasks) under its line.
-const isExpanded = atom(
-  { plugin: 'orchestrator-pane', key: 'isExpanded' } as const,
-  false,
-)
-
-// Whether the orchestrator skill started this session: the band then shows
-// before any docs exist.
-const isStarted = atom(
-  { plugin: 'orchestrator-pane', key: 'isStarted' } as const,
   false,
 )
 
@@ -64,10 +67,10 @@ const toneOf = (done: number, total: number): Tone => {
   return 'open'
 }
 
-const CHIP: Record<Tone, { bg: string; fg: string }> = {
-  done: { bg: 'success', fg: 'inverseText' },
-  behind: { bg: 'warning', fg: 'inverseText' },
-  open: { bg: 'subtle', fg: 'text' },
+const TONE: Record<Tone, string> = {
+  done: 'success',
+  behind: 'warning',
+  open: 'subtle',
 }
 
 const readOr = async (
@@ -81,22 +84,53 @@ const readOr = async (
   }
 }
 
+const hasDocs = async ($: EngineInterface, dir: string): Promise<boolean> =>
+  $.fs.exists(joinPath(dir, DIR)).catch(() => false)
+
+// The folder whose docs/orchestrator/ the band reads: the session's folder or
+// one above it, or, from a git worktree (an agent's, under .claude/worktrees/,
+// often cut from a branch that lacks the docs), its main checkout.
+const findRoot = async (
+  $: EngineInterface,
+  start: string,
+): Promise<string | undefined> => {
+  let dir: string | undefined = resolvePath(start, '.')
+  for (let depth = 0; dir !== undefined && depth < 32; depth += 1) {
+    if (await hasDocs($, dir)) return dir
+    const gitFile = await readOr($, joinPath(dir, '.git'))
+    const main = gitFile ? parseWorktreeMain(gitFile) : undefined
+    if (main && (await hasDocs($, main))) return main
+    dir = parentOf(dir)
+  }
+
+  return undefined
+}
+
 const load = async ($: EngineInterface): Promise<Board> => {
   const readAt = await $.clock.now()
+  const cwd = await $.session.cwd()
+  const pinned = (await read($, pin)).path
+  const root = pinned ?? (await findRoot($, cwd))
+  if (root === undefined) return { isFound: false, root: cwd, readAt }
+
+  const docs = joinPath(root, DIR)
   const [goalText, projectText, handoffText] = await Promise.all([
-    readOr($, `${DIR}/goal.md`),
-    readOr($, `${DIR}/project.md`),
-    readOr($, `${DIR}/handoff.md`),
+    readOr($, `${docs}/goal.md`),
+    readOr($, `${docs}/project.md`),
+    readOr($, `${docs}/handoff.md`),
   ])
   if (!goalText && !projectText && !handoffText) {
-    return { isFound: false, readAt }
+    return { isFound: false, root, readAt }
   }
 
   const taskPath = projectText ? parseTaskPath(projectText) : undefined
-  const taskText = taskPath ? await readOr($, taskPath) : undefined
+  const taskText = taskPath
+    ? await readOr($, resolvePath(root, taskPath))
+    : undefined
 
   return {
     isFound: true,
+    root,
     goal: goalText ? parseGoal(goalText) : undefined,
     tasks:
       taskPath && taskText
@@ -114,34 +148,36 @@ const refresh = async ($: EngineInterface): Promise<Board> => {
   return next
 }
 
+// Show the band now, docs or not: the orchestrator started or was asked for.
+const showBand = async ($: EngineInterface): Promise<Board> => {
+  await update($, band, view => ({ ...view, isHidden: false, isStarted: true }))
+
+  return refresh($)
+}
+
+const waitingText = (view: Board): string =>
+  `waiting for ${DIR}/ in ${view.root ?? 'this folder'}`
+
 // The progress as one line of text: what a reader without the drawing gets.
-export const progressText = (view: Board, isWaiting: boolean): string | undefined => {
-  if (!view.isFound) return isWaiting ? '◆ orchestrator starting' : undefined
+export const progressText = (view: Board): string => {
+  if (!view.isFound) return `Orchestrator · ${waitingText(view)}`
   const goal = view.goal
   const tasks = view.tasks?.sections ?? []
   const taskPart = tasks.length
     ? `tasks ${tasks.reduce((n, one) => n + one.done, 0)}/${tasks.reduce((n, one) => n + one.total, 0)}`
     : undefined
-  if (!goal) return ['◆ no active goal', taskPart].filter(Boolean).join(' · ')
+  if (!goal) return ['Orchestrator · no active goal', taskPart].filter(Boolean).join(' · ')
   const bars = countBars(goal)
-  if (isGoalMet(goal, bars.done, bars.total)) {
-    return ['◆ goal met', `${bars.done}/${bars.total} bars`, taskPart].filter(Boolean).join(' · ')
-  }
 
   return [
-    `◆ ${bars.done}/${bars.total} bars`,
+    `Orchestrator · ${bars.done}/${bars.total} bars · ${goal.status}`,
     ...goal.areas.map(area => `${area.name} ${area.bars.filter(one => one.isDone).length}/${area.bars.length}`),
     taskPart,
+    view.next && `Next: ${view.next}`,
   ]
     .filter(Boolean)
     .join(' · ')
 }
-
-// What a reader without the drawing gets: the status and the next step.
-const summary = (view: Board): string =>
-  [progressText(view, false) ?? `No ${DIR}/ here yet.`, view.next && `Next: ${view.next}`]
-    .filter(Boolean)
-    .join(' · ')
 
 type Els = ReturnType<EngineInterface['ui']['resolve']>
 
@@ -165,7 +201,8 @@ const track = (
   )
 }
 
-// The terminal's detail: open bars by area, then each task section.
+// The terminal's detail: open bars by area, then each task section, then
+// which project folder it reads.
 const detailTree = (els: Els, view: Board, isShowingDone: boolean) => {
   const { Box, Text } = els
   const goal = view.goal
@@ -181,6 +218,7 @@ const detailTree = (els: Els, view: Board, isShowingDone: boolean) => {
 
   return (
     <Box flexDirection="column" marginTop={1}>
+      {goal?.statement && <Text bold>{goal.statement}</Text>}
       {goal && bars.total > 0 && (
         <Text dimColor>
           {bars.total > bars.done ? `Still open · ${bars.total - bars.done}` : 'All bars met'}
@@ -188,11 +226,10 @@ const detailTree = (els: Els, view: Board, isShowingDone: boolean) => {
       )}
       {open.map(({ area, shown }) => {
         const done = area.bars.filter(one => one.isDone).length
-        const tone = CHIP[toneOf(done, area.bars.length)]
 
         return (
           <Box key={`area-${area.name}`} flexDirection="column">
-            <Text color={tone.bg}>
+            <Text color={TONE[toneOf(done, area.bars.length)]}>
               {area.name} {done}/{area.bars.length}
             </Text>
             {shown.map((one, at) => (
@@ -226,6 +263,10 @@ const detailTree = (els: Els, view: Board, isShowingDone: boolean) => {
           )}
         </Box>
       )}
+      <Text dimColor wrap="truncate-end">
+        {view.root}
+        {view.updatedOn ? ` · handoff ${view.updatedOn}` : ''}
+      </Text>
     </Box>
   )
 }
@@ -233,12 +274,15 @@ const detailTree = (els: Els, view: Board, isShowingDone: boolean) => {
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     // Not `/orchestrator`: that name belongs to the orchestrator skill.
+    // A refused name must not stop the band from showing.
     await $.command
       .register({
         name: COMMAND,
-        description: 'Open or close the orchestrator detail in the band above the prompt',
+        description:
+          'Open or close the orchestrator detail above the prompt (args: a project folder, auto, or hide)',
+        argumentHint: '[folder | auto | hide]',
         // Runs at once mid-turn instead of waiting for the turn to end: it
-        // only flips what the band shows, so it never disturbs the work.
+        // only changes what the band reads and shows, never the work.
         immediate: true,
       })
       .catch(() => undefined)
@@ -249,26 +293,64 @@ export const register: Register = on => {
     return next(e)
   })
 
-  // Opens or closes the detail in the band; prints nothing in the chat.
-  on('command.run', { command: COMMAND }, async $ => {
-    await update($, isExpanded, was => !was)
-    await refresh($)
+  // Nothing is printed in the chat; what the command has to say is a toast.
+  // Bare, it shows a hidden band and otherwise opens or closes the detail;
+  // `<folder>` reads that project instead of searching from the session's
+  // folder; `auto` goes back to searching; `hide` takes the band away until
+  // the orchestrator or the command is next run.
+  on('command.run', { command: COMMAND }, async ($, e) => {
+    const arg = e.args.trim()
+    if (arg === 'hide') {
+      await update($, band, view => ({ ...view, isHidden: true }))
+      $.ui.toast(`Orchestrator band hidden; /${COMMAND} shows it again.`)
+
+      return {}
+    }
+    if (arg === '') {
+      const view = await read($, band)
+      const found = await read($, board)
+      if (!view.isHidden && found.isFound) {
+        await update($, band, one => ({ ...one, isExpanded: !one.isExpanded }))
+        void refresh($).catch(() => undefined)
+
+        return {}
+      }
+    } else if (arg === 'auto') {
+      await update($, pin, () => ({}))
+    } else {
+      const path = resolvePath(await $.session.cwd(), arg)
+      if (!(await hasDocs($, path))) {
+        $.ui.toast(`No ${DIR}/ in ${path}; the band is unchanged.`)
+
+        return {}
+      }
+      await update($, pin, () => ({ path }))
+    }
+    const found = await showBand($)
+    $.ui.toast(
+      found.isFound
+        ? `Orchestrator band shows ${found.root}.`
+        : `No ${DIR}/ in ${found.root} or above yet. Point the band at a project with /${COMMAND} <folder>.`,
+    )
 
     return {}
   })
 
-  // The band shows from the moment the orchestrator skill
-  // starts, before its first step writes anything.
+  // Show the band the moment the orchestrator skill starts, before its first
+  // step writes anything; it says it is waiting until docs appear.
+  // A plugin in a tier above this mod's (an org's security plugin, say) may
+  // `next.to` past the user tier on `skill.prompt`, so this hook never runs;
+  // the `Skill` tool call below catches the same start.
   on('skill.prompt', async ($, e, next) => {
-    if (isOrchestrator(e.skill)) {
-      await update($, isStarted, () => true).catch(() => undefined)
-      void refresh($).catch(() => undefined)
-    }
+    if (isOrchestrator(e.skill)) void showBand($).catch(() => undefined)
 
     return next(e)
   }).catch(($, e, next) => next(e)) // observe only: never block the skill
 
   on('tool.call', async ($, e, next) => {
+    if (e.tool === 'Skill' && isOrchestrator(e.skill)) {
+      void showBand($).catch(() => undefined)
+    }
     const ran = await next(e)
     if (WRITERS.has(String(e.tool))) void refresh($).catch(() => undefined)
 
@@ -285,17 +367,18 @@ export const register: Register = on => {
   // when opened.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.props.hasSurvey) return next(e)
-    const view = await read($, board)
-    if (!view.isFound && !(await read($, isStarted))) return next(e)
+    const view = await read($, band)
+    const found = await read($, board)
+    if (view.isHidden || (!found.isFound && !view.isStarted)) return next(e)
     const els = $.ui.resolve(e)
     const { Box, Text, Button } = els
-    const isOpen = view.isFound && (await read($, isExpanded))
+    const isOpen = found.isFound && view.isExpanded
     const isShowingDone = await read($, showDone)
-    const doneCount = view.goal ? countBars(view.goal).done : 0
+    const doneCount = found.goal ? countBars(found.goal).done : 0
     // Laid out at the size it is drawn, so text keeps its true size.
     const width = Math.max(320, Math.min(1100, e.props.bodyColumns * 8)) - 90
 
-    const controls = view.isFound && (
+    const controls = found.isFound && (
       <Box flexDirection="row" columnGap={1} flexShrink={0}>
         {isOpen && doneCount > 0 && (
           <Button
@@ -307,25 +390,27 @@ export const register: Register = on => {
           />
         )}
         <Button
-          key="toggle-detail"
+          key="more"
           // One glyph: a plain Button with a one-glyph label is a control by itself.
           label={isOpen ? '▴' : '▾'}
           plain
           dimColor
-          onPress={() => void update($, isExpanded, was => !was)}
+          onPress={() =>
+            void update($, band, one => ({ ...one, isExpanded: !one.isExpanded }))
+          }
         />
       </Box>
     )
 
     if (e.surface !== 'terminal' && 'Svg' in els) {
       const { Svg } = els
-      const line = glanceSvg(view, width)
-      const detail = isOpen ? detailSvg(view, isShowingDone, width) : undefined
+      const line = glanceSvg(found, width)
+      const detail = isOpen ? detailSvg(found, isShowingDone, width) : undefined
 
       return (
         <Box flexDirection="column" rowGap={1}>
           <Box flexDirection="row" justifyContent="space-between" alignItems="center" columnGap={1}>
-            <Svg {...line} alt={summary(view)} isInteractive />
+            <Svg {...line} alt={progressText(found)} isInteractive />
             {controls}
           </Box>
           {detail && <Svg {...detail} alt="Open done-bars and task sections" isInteractive />}
@@ -333,41 +418,35 @@ export const register: Register = on => {
       )
     }
 
-    const goal = view.goal
-    const bars = goal ? countBars(goal) : { done: 0, total: 0 }
-    const line = !view.isFound ? (
-      <Text dimColor wrap="truncate-end">
-        <Text color="claude">◆</Text> orchestrator starting · fills in as {DIR}/ is written
-      </Text>
-    ) : goal && isGoalMet(goal, bars.done, bars.total) ? (
-      <Text wrap="truncate-end">
-        {'  '}<Text color="success">✓ Goal met</Text>{' '}
-        <Text dimColor>{goal.statement}</Text>
-      </Text>
-    ) : (
-      <Text wrap="truncate-end">
-        {'  '}<Text color="suggestion">Next</Text>{' '}
-        {view.next ?? goal?.statement ?? 'No active goal'}
-      </Text>
-    )
+    if (!found.isFound) {
+      return (
+        <Text dimColor wrap="truncate-end">
+          <Text color="claude">◆</Text> Orchestrator · {waitingText(found)}
+        </Text>
+      )
+    }
 
-    const tasks = view.tasks?.sections ?? []
-    const progress = view.isFound && (
+    const goal = found.goal
+    const bars = goal ? countBars(goal) : { done: 0, total: 0 }
+    const tasks = found.tasks?.sections ?? []
+    const progress = (
       <Text wrap="truncate-end">
         <Text color="claude">◆</Text>{' '}
-        {goal && bars.total > 0 && (
+        {goal && bars.total > 0 ? (
           <Text>
             {track(els, bars.done, bars.total, 'success', 10)}{' '}
             <Text bold>
-              {bars.done}/{bars.total}
+              {bars.done}/{bars.total} bars
             </Text>
           </Text>
+        ) : (
+          <Text dimColor>no active goal</Text>
         )}
         {goal?.areas.map(area => {
           const done = area.bars.filter(one => one.isDone).length
 
           return (
-            <Text key={`area-${area.name}`} color={CHIP[toneOf(done, area.bars.length)].bg}>
+            <Text key={`area-${area.name}`} color={TONE[toneOf(done, area.bars.length)]}>
               {'  '}
               {area.name} {done}/{area.bars.length}
             </Text>
@@ -381,6 +460,18 @@ export const register: Register = on => {
         )}
       </Text>
     )
+    const line =
+      goal && isGoalMet(goal, bars.done, bars.total) ? (
+        <Text wrap="truncate-end">
+          {'  '}
+          <Text color="success">✓ Goal met</Text> <Text dimColor>{goal.statement}</Text>
+        </Text>
+      ) : (
+        <Text wrap="truncate-end">
+          {'  '}
+          <Text color="suggestion">Next</Text> {found.next ?? goal?.statement ?? 'No active goal'}
+        </Text>
+      )
 
     return (
       <Box flexDirection="column">
@@ -391,7 +482,7 @@ export const register: Register = on => {
           </Box>
           {controls}
         </Box>
-        {isOpen && detailTree(els, view, isShowingDone)}
+        {isOpen && detailTree(els, found, isShowingDone)}
       </Box>
     )
   })
