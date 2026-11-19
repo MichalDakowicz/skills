@@ -281,9 +281,9 @@ export const register: Register = on => {
         description:
           'Open or close the orchestrator detail above the prompt (args: a project folder, auto, or hide)',
         argumentHint: '[folder | auto | hide]',
-        // Not `immediate`: the app then refuses any message that mixes the
-        // command with other slash commands (/orchestrator, /deslop-ui), @-mentions
-        // or formatting ("nothing was sent"). Waits for the turn to end instead.
+        // Runs at once mid-turn instead of waiting for the turn to end: it
+        // only changes what the band reads and shows, never the work.
+        immediate: true,
       })
       .catch(() => undefined)
     // A status line an earlier version pinned outlives a reload: clear it.

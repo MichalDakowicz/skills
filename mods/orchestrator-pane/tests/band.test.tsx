@@ -216,13 +216,12 @@ test('the progress reads as one line of text', async () => {
   )
 })
 
-test('the command is not immediate, so mixed messages still send', async ($, on) => {
+test('the command runs mid-turn', async ($, on) => {
   const specs: unknown[] = []
   seat(on, '/', AT_ROOT, spec => specs.push(spec))
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
 
-  expect(specs).toHaveLength(1)
-  expect((specs[0] as { immediate?: true }).immediate).toBeUndefined()
+  expect(specs).toEqual([expect.objectContaining({ immediate: true })])
 })
 
 test('the terminal band is progress over the next step', async ($, on) => {
