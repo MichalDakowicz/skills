@@ -20,6 +20,20 @@ quieter but not better, revert it.
 If the project already has a design system, tokens or a style guide, it wins over
 every number here. Apply these rules only where it is silent.
 
+## Under the orchestrator
+
+When the `orchestrator` skill is running, or you are one of its builders, its rules
+win where they clash with this skill; do not stop or ask the user for a plan.
+- The design source and spec are the truth. Do not invent copy, sections, colours or
+  states to "lift" or add signature moves. Intensity and Signature moves apply only
+  to what the design already shows; where it is silent, ask via QUESTIONS.
+- The plan (section 1) is the orchestrator's: it is written once into `goal.md`'s
+  Looks bar or `project.md`. A builder gets the Keep and Broken lists in its prompt
+  and works only those items, inside its allowed paths.
+- Builders run the scan (section 3, step 1) as one of their check commands; the
+  orchestrator reruns it and reads the diff. Screenshots and the before/after are
+  the tester's job, against the Looks bar. Builders never commit.
+
 ## 0. Fixing an existing UI (most important mode)
 
 1. Screenshot it first (desktop + 375px). Write two lists:

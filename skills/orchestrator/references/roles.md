@@ -21,6 +21,10 @@ need to change it, stop and say why.
 Design source (follow it exactly, do not invent UI, copy, colours or states):
 {{design files / sections}}
 
+UI units only: follow the deslop-ui skill. Keep (leave as is): {{keep list}}. Broken
+(fix only these): {{broken list}}. Run `python <deslop-ui>/scripts/scan.py <files>`
+and clear every hit or give a reason. Do not add UI the design does not show.
+
 Binding rules (from CLAUDE.md):
 {{the rules that matter for this unit: file size caps, naming, security, i18n…}}
 - No AI credit in code, comments or docs.

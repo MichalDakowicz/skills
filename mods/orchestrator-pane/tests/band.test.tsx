@@ -173,11 +173,11 @@ const seat = (
 
     return { value: undefined }
   })
-  // The engine's own band row for this plugin: none.
+  // Beneath the plugin: another mod's band sharing the row.
   on('ui.render', ($, e) => {
-    const { Box } = $.ui.resolve(e)
+    const { Text } = $.ui.resolve(e)
 
-    return <Box />
+    return <Text>another band</Text>
   })
 
   return toasts
@@ -216,12 +216,13 @@ test('the progress reads as one line of text', async () => {
   )
 })
 
-test('the command runs mid-turn', async ($, on) => {
+test('the command is not immediate, so mixed messages still send', async ($, on) => {
   const specs: unknown[] = []
   seat(on, '/', AT_ROOT, spec => specs.push(spec))
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
 
-  expect(specs).toEqual([expect.objectContaining({ immediate: true })])
+  expect(specs).toHaveLength(1)
+  expect((specs[0] as { immediate?: true }).immediate).toBeUndefined()
 })
 
 test('the terminal band is progress over the next step', async ($, on) => {
@@ -260,6 +261,18 @@ test('desktop and mobile draw the band as styled svg', async ($, on) => {
     expect(detail).toContain('Still open · 2')
     expect(detail).toContain('Tasks')
     await ui.press({ key: 'more' })
+    await ui.unmount()
+  }
+})
+
+test('another band in the row draws under ours on every surface', async ($, on) => {
+  seat(on, '/', AT_ROOT)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+    expect(await ui.find({ type: 'Text', text: 'another band' })).toBeDefined()
+    expect(await ui.find({ type: surface === 'terminal' ? 'Text' : 'Svg' })).toBeDefined()
     await ui.unmount()
   }
 })

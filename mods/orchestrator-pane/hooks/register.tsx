@@ -281,9 +281,9 @@ export const register: Register = on => {
         description:
           'Open or close the orchestrator detail above the prompt (args: a project folder, auto, or hide)',
         argumentHint: '[folder | auto | hide]',
-        // Runs at once mid-turn instead of waiting for the turn to end: it
-        // only changes what the band reads and shows, never the work.
-        immediate: true,
+        // Not `immediate`: the app then refuses any message that mixes the
+        // command with other slash commands (/orchestrator, /deslop-ui), @-mentions
+        // or formatting ("nothing was sent"). Waits for the turn to end instead.
       })
       .catch(() => undefined)
     // A status line an earlier version pinned outlives a reload: clear it.
@@ -370,8 +370,13 @@ export const register: Register = on => {
     const view = await read($, band)
     const found = await read($, board)
     if (view.isHidden || (!found.isFound && !view.isStarted)) return next(e)
+    // Other mods share this row (ponytail's band): draw theirs under ours.
+    // next(e) rejects only when nothing answers beneath.
+    const below = await next(e).catch(() => undefined)
     const els = $.ui.resolve(e)
     const { Box, Text, Button } = els
+    const stack = (mine: NonNullable<typeof below>) =>
+      below ? <Box flexDirection="column">{mine}{below}</Box> : mine
     const isOpen = found.isFound && view.isExpanded
     const isShowingDone = await read($, showDone)
     const doneCount = found.goal ? countBars(found.goal).done : 0
@@ -407,22 +412,22 @@ export const register: Register = on => {
       const line = glanceSvg(found, width)
       const detail = isOpen ? detailSvg(found, isShowingDone, width) : undefined
 
-      return (
+      return stack(
         <Box flexDirection="column" rowGap={1}>
           <Box flexDirection="row" justifyContent="space-between" alignItems="center" columnGap={1}>
             <Svg {...line} alt={progressText(found)} isInteractive />
             {controls}
           </Box>
           {detail && <Svg {...detail} alt="Open done-bars and task sections" isInteractive />}
-        </Box>
+        </Box>,
       )
     }
 
     if (!found.isFound) {
-      return (
+      return stack(
         <Text dimColor wrap="truncate-end">
           <Text color="claude">◆</Text> Orchestrator · {waitingText(found)}
-        </Text>
+        </Text>,
       )
     }
 
@@ -473,7 +478,7 @@ export const register: Register = on => {
         </Text>
       )
 
-    return (
+    return stack(
       <Box flexDirection="column">
         <Box flexDirection="row" justifyContent="space-between" columnGap={1}>
           <Box flexDirection="column" flexShrink={1}>
@@ -483,7 +488,7 @@ export const register: Register = on => {
           {controls}
         </Box>
         {isOpen && detailTree(els, found, isShowingDone)}
-      </Box>
+      </Box>,
     )
   })
 }

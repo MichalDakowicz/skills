@@ -66,6 +66,10 @@ Formats: [references/project-docs.md](references/project-docs.md) and
 | Tester | `haiku` | walks the real user flows, reports bugs with evidence | fixes anything |
 | Gap auditor | `opus` | read-only hunt for logic, security, state and spec gaps | edits files |
 
+**UI units** use the `deslop-ui` skill. You run its plan once, from the design source,
+and put the Keep and Broken lists in the builder prompt. Add its scan to the check
+commands. It never overrides "Never invent product".
+
 The models are defaults. `project.md` can override them per project. Prompt templates
 and report formats are in [references/roles.md](references/roles.md). Give each
 subagent everything it needs: it starts cold.
